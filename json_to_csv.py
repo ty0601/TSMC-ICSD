@@ -12,16 +12,23 @@ def process_json_to_csv(json_file_path, csv_file_path, data_extractor):
         # Write headers
         writer.writerow(data_extractor['headers'])
 
-        for series_data in json_data['timeSeriesData']:
-            for point_data in series_data['pointData']:
-                row = data_extractor['row_extractor'](point_data)
+        # 檢查 JSON 數據類型並處理
+        if isinstance(json_data, list):
+            # 如果頂層是列表，直接處理每個條目
+            for entry in json_data:
+                row = data_extractor['row_extractor'](entry)
                 writer.writerow(row)
+        else:
+            # 對於原始的 timeSeriesData 結構
+            for series_data in json_data['timeSeriesData']:
+                for point_data in series_data['pointData']:
+                    row = data_extractor['row_extractor'](point_data)
+                    writer.writerow(row)
+
 
 
 def format_time(time_str):
-    # 解析 ISO 8601 格式的時間
     time_obj = datetime.datetime.fromisoformat(time_str.replace('Z', '+00:00'))
-    # 格式化為 'YYYY-MM-DD hh:mm:ss' 形式
     return time_obj.strftime('%Y-%m-%d %H:%M:%S')
 
 
@@ -49,6 +56,15 @@ extractors = {
                                                                                                         'distributionValue'].get(
                 'mean') is not None else 'N/A'
         ]
+    },
+    'logs': {
+        'headers': ["Timestamp", "Severity", "TextPayload", "LogName"],
+        'row_extractor': lambda entry: [
+            entry.get('timestamp', 'N/A'),
+            entry.get('severity', 'N/A'),
+            entry.get('textPayload', 'N/A').replace('\n', ' '),  # 去除換行符
+            entry.get('logName', 'N/A')
+        ]
     }
 }
 
@@ -63,7 +79,8 @@ json_csv_mappings = [
     ("./Dynamic resource/json/Container Startup Latency.json", "./Dynamic resource/csv/Container Startup Latency.csv",
      extractors['latency']),
     ("./Dynamic resource/json/Instance Count.json", "./Dynamic resource/csv/Instance Count.csv", extractors['count']),
-    ("./Dynamic resource/json/Request Count.json", "./Dynamic resource/csv/Request Count.csv", extractors['count'])
+    ("./Dynamic resource/json/Request Count.json", "./Dynamic resource/csv/Request Count.csv", extractors['count']),
+    ("./Dynamic resource/json/Cloud_Run_Logs.json", "./Dynamic resource/csv/Cloud_Run_Logs.csv", extractors['logs'])
 ]
 
 # Processing each JSON file into its corresponding CSV format
