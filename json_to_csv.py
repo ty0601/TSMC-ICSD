@@ -1,6 +1,7 @@
 import json
 import csv
 import datetime
+from draw_figure import plot_csv
 
 
 def process_json_to_csv(json_file_path, csv_file_path, data_extractor):
@@ -39,22 +40,46 @@ def format_time(time_str):
 def main():
     # Extractors for different JSON data types
     extractors = {
-        'latency': {
-            'headers': ["Time", "Latency (ms)"],
+        'Request latency': {
+            'headers': ["Time", "Request Latency (ms)"],
             'row_extractor': lambda point: [
                 format_time(point['timeInterval']['endTime']),
                 point['values'][0]['distributionValue'].get('mean', 'N/A')
             ]
         },
-        'count': {
-            'headers': ["Time", "Count"],
+        'Startup latency': {
+            'headers': ["Time", "Startup Latency (ms)"],
+            'row_extractor': lambda point: [
+                format_time(point['timeInterval']['endTime']),
+                point['values'][0]['distributionValue'].get('mean', 'N/A')
+            ]
+        },
+        'Instance count': {
+            'headers': ["Time", "Instance count"],
             'row_extractor': lambda point: [
                 format_time(point['timeInterval']['endTime']),
                 point['values'][0].get('int64Value', 'N/A')
             ]
         },
-        'utilization': {
-            'headers': ["Time", "Utilization (%)"],
+        'Request count': {
+            'headers': ["Time", "Request count"],
+            'row_extractor': lambda point: [
+                format_time(point['timeInterval']['endTime']),
+                point['values'][0].get('int64Value', 'N/A')
+            ]
+        },
+        'CPU utilization': {
+            'headers': ["Time", "CPU Utilization (%)"],
+            'row_extractor': lambda point: [
+                format_time(point['timeInterval']['endTime']),
+                "{:.4f}".format(float(point['values'][0]['distributionValue'].get('mean', 0)) * 100) if
+                point['values'][0][
+                    'distributionValue'].get(
+                    'mean') is not None else 'N/A'
+            ]
+        },
+        'Memory utilization': {
+            'headers': ["Time", "Memory Utilization (%)"],
             'row_extractor': lambda point: [
                 format_time(point['timeInterval']['endTime']),
                 "{:.4f}".format(float(point['values'][0]['distributionValue'].get('mean', 0)) * 100) if
@@ -68,7 +93,7 @@ def main():
             'row_extractor': lambda entry: [
                 entry.get('timestamp', 'N/A'),
                 entry.get('severity', 'N/A'),
-                entry.get('textPayload', 'N/A').replace('\n', ' '),  # 去除換行符
+                entry.get('textPayload', 'N/A').replace('\n', ' '),
                 entry.get('logName', 'N/A')
             ]
         }
@@ -77,18 +102,19 @@ def main():
     # Mapping of JSON files to their corresponding CSV files and extractors
     json_csv_mappings = [
         ("./Dynamic resource/json/Request Latency.json", "./Dynamic resource/csv/Request Latency.csv",
-         extractors['latency']),
+         extractors['Request latency']),
         ("./Dynamic resource/json/Container CPU Utilization.json",
          "./Dynamic resource/csv/Container CPU Utilization.csv",
-         extractors['utilization']),
+         extractors['CPU utilization']),
         ("./Dynamic resource/json/Container Memory Utilization.json",
-         "./Dynamic resource/csv/Container Memory Utilization.csv", extractors['utilization']),
+         "./Dynamic resource/csv/Container Memory Utilization.csv", extractors['Memory utilization']),
         ("./Dynamic resource/json/Container Startup Latency.json",
          "./Dynamic resource/csv/Container Startup Latency.csv",
-         extractors['latency']),
+         extractors['Startup latency']),
         ("./Dynamic resource/json/Instance Count.json", "./Dynamic resource/csv/Instance Count.csv",
-         extractors['count']),
-        ("./Dynamic resource/json/Request Count.json", "./Dynamic resource/csv/Request Count.csv", extractors['count']),
+         extractors['Instance count']),
+        ("./Dynamic resource/json/Request Count.json", "./Dynamic resource/csv/Request Count.csv",
+         extractors['Request count']),
         ("./Dynamic resource/json/Cloud_Run_Logs.json", "./Dynamic resource/csv/Cloud_Run_Logs.csv", extractors['logs'])
     ]
 
@@ -96,7 +122,16 @@ def main():
     for json_path, csv_path, extractor in json_csv_mappings:
         process_json_to_csv(json_path, csv_path, extractor)
 
-    print("All JSON files have been processed into CSV format.")
+    path = './Dynamic resource/csv'
+    file_paths = [
+        f"{path}/Request Latency.csv",
+        f"{path}/Container CPU Utilization.csv",
+        f"{path}/Container Memory Utilization.csv",
+        f"{path}/Instance Count.csv",
+    ]
+
+    for path in file_paths:
+        plot_csv(path)
 
 
 if __name__ == '__main__':

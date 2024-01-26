@@ -153,8 +153,7 @@ def main():
 
     data_agent = DataLoadAgent(file_paths)
     data_agent.load_and_merge_data()
-    merged_data_batches = data_agent.get_merged_data_batches()
-    print(merged_data_batches)
+    merged_data_batches = data_agent.get_merged_data_batches(batch_size=50)
 
     analysis_agent = DataAnalysisAgent("gemini-pro")
     suspend_agent = SuspendAnalysisAgent("gemini-pro")
