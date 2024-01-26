@@ -1,7 +1,7 @@
 import json
 import csv
 import datetime
-from draw_figure import plot_csv_subplot
+# from draw_figure import plot_csv_subplot
 
 
 def process_json_to_csv(json_file_path, csv_file_path, data_extractor):
@@ -15,6 +15,8 @@ def process_json_to_csv(json_file_path, csv_file_path, data_extractor):
 
         if isinstance(json_data, list):
             for entry in json_data:
+                if entry.get('timeInterval') is None:
+                    continue
                 formatted_time = format_time(entry['timeInterval']['endTime'])
                 if formatted_time not in processed_times:
                     processed_times.add(formatted_time)
@@ -92,6 +94,17 @@ def request_count_extractor(json_file_path, csv_file_path, data_extractor):
             row = [time, counts['1xx'], counts['2xx'], counts['3xx'], counts['4xx'], counts['5xx']]
             writer.writerow(row)
 
+def logs_extractor(json_file_path, csv_file_path, data_extractor):
+    with open(json_file_path, 'r') as file:
+        json_data = json.load(file)
+
+    with open(csv_file_path, 'w', newline='') as csvfile:
+        writer = csv.writer(csvfile)
+        writer.writerow(data_extractor['headers'])
+
+        for entry in json_data:
+            row = data_extractor['row_extractor'](entry)
+            writer.writerow(row)
 
 def main():
     # Extractors for different JSON data types
@@ -111,14 +124,14 @@ def main():
             ]
         },
         'Instance count': {
-            'headers': ["Time", "Instance count(idle), Instance count(active)"],
+            'headers': ["Time", "Instance count(idle)", "Instance count(active)"],
             'row_extractor': lambda point: [
                 format_time(point['timeInterval']['endTime']),
                 point['values'][0].get('int64Value', 'N/A')
             ]
         },
         'Request count': {
-            'headers': ["Time", "Request count(1xx), Request count(2xx), Request count(3xx), Request count(4xx)",
+            'headers': ["Time", "Request count(1xx)", "Request count(2xx)", "Request count(3xx)", "Request count(4xx)",
                         "Request count(5xx)"],
             'row_extractor': lambda point: [
                 format_time(point['timeInterval']['endTime']),
@@ -146,7 +159,7 @@ def main():
             ]
         },
         'logs': {
-            'headers': ["Timestamp", "Severity", "TextPayload", "LogName"],
+            'headers': ["Timestamp", "Severity", "TextPayload"],
             'row_extractor': lambda entry: [
                 entry.get('timestamp', 'N/A').split('.')[0],
                 entry.get('severity', 'N/A'),
@@ -167,7 +180,6 @@ def main():
         ("./Dynamic_resource/json/Container_Startup_Latency.json",
          "./Dynamic_resource/csv/Container_Startup_Latency.csv",
          extractors['Startup latency']),
-        ("./Dynamic_resource/json/Cloud_Run_Logs.json", "./Dynamic_resource/csv/Cloud_Run_Logs.csv", extractors['logs'])
     ]
 
     # Processing each JSON file into its corresponding CSV format
@@ -177,6 +189,8 @@ def main():
                              extractors['Instance count'])
     request_count_extractor("./Dynamic_resource/json/Request_Count.json", "./Dynamic_resource/csv/Request_Count.csv",
                             extractors['Request count'])
+    logs_extractor("./Dynamic_resource/json/Cloud_Run_Logs.json", "./Dynamic_resource/csv/Cloud_Run_Logs.csv",
+                  extractors['logs'])
 
     path = './Dynamic_resource/csv'
     # path = './ICSD_Cloud_Resource'
@@ -189,7 +203,7 @@ def main():
     ]
 
     output_path = f"{path.split('/')[1]}/figure/subplot.png"
-    plot_csv_subplot(file_paths, output_path)
+    # plot_csv_subplot(file_paths, output_path)
 
 
 if __name__ == '__main__':

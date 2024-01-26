@@ -36,21 +36,17 @@ def fetch_metrics_data(metrics, url, token, server_name, file_name):
             file.write(response.text)
 
 
-def fetch_logs(project_id, token, filename, page_size=100):
+def fetch_logs(project_id, server_name, token, filename, page_size=100):
     end_time = datetime.utcnow()
-    start_time = end_time - timedelta(days=1)
+    start_time = end_time - timedelta(days=10)
     time_filter = f"timestamp >= \"{start_time.isoformat()}Z\" AND timestamp <= \"{end_time.isoformat()}Z\""
 
-    filter_condition = (
-        'resource.type="cloud_run_revision" '
-        'resource.labels.revision_name="simpleserver-00001-kgv" '
-        'resource.labels.service_name="simpleserver" '
-        'logName=("projects/tsmccareerhack2024-icsd-grp4/logs/run.googleapis.com%2Frequests" OR '
-        '"projects/tsmccareerhack2024-icsd-grp4/logs/run.googleapis.com%2Fstderr" OR '
-        '"projects/tsmccareerhack2024-icsd-grp4/logs/run.googleapis.com%2Fstdout" OR '
-        '"projects/tsmccareerhack2024-icsd-grp4/logs/run.googleapis.com%2Fvarlog%2Fsystem") '
-        'severity>=WARNING'
-    )
+    filter_condition = '''
+        resource.type="cloud_run_revision"
+        resource.labels.service_name="tsmclinebot"
+        severity>=WARNING
+        logName=("projects/tsmccareerhack2024-icsd-grp4/logs/run.googleapis.com%2Fstderr" OR "projects/tsmccareerhack2024-icsd-grp4/logs/run.googleapis.com%2Fstdout" OR "projects/tsmccareerhack2024-icsd-grp4/logs/run.googleapis.com%2Fvarlog%2Fsystem")
+    '''
 
     full_filter = f"{filter_condition} AND {time_filter}"
 
@@ -80,7 +76,7 @@ def fetch_logs(project_id, token, filename, page_size=100):
             break
 
     with open(f"./Dynamic_resource/json/{filename}.json", "w") as file:
-        json.dump(all_logs, file)
+        json.dump(all_logs, file, indent=2)
 
 
 def main():
@@ -96,7 +92,7 @@ def main():
     url = 'https://monitoring.googleapis.com/v3/projects/586786925939/timeSeries:query'
     token = get_token()
 
-    server_name = "simpleserver"
+    server_name = "tsmclinebot"
 
     file_name = {
         'cpu_utilizations': 'Container_CPU_Utilization',
@@ -110,8 +106,8 @@ def main():
     fetch_metrics_data(metrics, url, token, server_name, file_name)
 
     project_id = "tsmccareerhack2024-icsd-grp4"
-    filename = "cloud_run_logs"
-    fetch_logs(project_id, token, filename)
+    filename = "Cloud_Run_Logs"
+    fetch_logs(project_id, server_name, token, filename)
 
 
 if __name__ == "__main__":

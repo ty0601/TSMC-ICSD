@@ -7,11 +7,12 @@ class DataLoadAgent:
     def __init__(self, file_paths):
         self.file_paths = file_paths
         self.merged_data = None
+        self.preprocessed_data = None
 
     def load_and_merge_data(self):
         # Reading the files into dataframes
         dataframes = {path.split('/')[-1].split('.')[0]: pd.read_csv(path) for path in self.file_paths}
-        print(dataframes)
+        # print(dataframes)
         # Standardizing the time format and setting it as index for each dataframe
         for df in dataframes.values():
             df['Time'] = pd.to_datetime(df['Time'])
@@ -20,11 +21,15 @@ class DataLoadAgent:
         # Merging all dataframes on the 'Time' index
         self.merged_data = pd.concat(dataframes.values(), axis=1)
 
+        # Save the merged data to a csv file
+        self.merged_data.to_csv('./Dynamic_resource/merged_cloud_data.csv')
+
         # Preprocess the data right after merging
         self.preprocess_data()
 
-        # Saving the merged and preprocessed data as a new CSV file
-        self.merged_data.to_csv('./Dynamic_resource/merged_cloud_data.csv')
+        with open('./Dynamic_resource/preprocessed_data.csv', 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerows(self.preprocessed_data)
 
     def get_merged_data(self):
         if self.merged_data is not None:
@@ -34,22 +39,18 @@ class DataLoadAgent:
 
     def preprocess_data(self):
         # Assuming the self.merged_data is a DataFrame
-        if self.merged_data is not None:
-            with open(f'./Dynamic_resource/merged_cloud_data.csv', 'r') as f:
-                reader = list(csv.reader(f))
-                title = reader[0]
-                data = reader[1:]
+        with open('./Dynamic_resource/merged_cloud_data.csv', 'r') as f:
+            reader = list(csv.reader(f))
+            title = reader[0]
+            data = reader[1:]
 
-                for idx, row in enumerate(data):
-                    row[0] = row[0].split(' ')[1][:5]
-                    row[1] = row[1].split('.')[0]
-                    row[2] = row[2].split('.')[0]
-                    row[3] = row[3].split('.')[0]
-                    data[idx] = [row[i] for i in list(range(0, 4)) + list(range(5, 7)) + [8]]
-                title = [title[i] for i in list(range(0, 4)) + list(range(5, 7)) + [8]]
-                return [title] + data
-        else:
-            raise ValueError("Data not loaded. Please run load_and_merge_data() first.")
+            for idx, row in enumerate(data):
+                row[0] = row[0].split(' ')[1][:5]  # time
+                data[idx] = [row[i] for i in list(range(0, 4)) + list(range(5, 7)) + [8]]
+                data[idx] = ['nan' if item == '' else item for item in data[idx]]
+                data[idx] = [item.split('.')[0] for item in data[idx]]
+            title = [title[i] for i in list(range(0, 4)) + list(range(5, 7)) + [8]]
+            self.preprocessed_data = [title] + data
 
     def get_merged_data_batches(self, batch_size=30):
         if self.merged_data is not None:
@@ -86,7 +87,7 @@ class DataAnalysisAgent:
                      <Problems> :
                      <Recommendation> : (scale up or scale down instance's CPU/instance 's memory/Instance_Count)
         ''' + data_summary + '\n' \
-                 # + user_log_prompt + '\n'
+            # + user_log_prompt + '\n'
 
         response = self.chat.send_message(prompt)
         return response.text
