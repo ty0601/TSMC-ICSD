@@ -35,10 +35,11 @@ class DataLoadAgent:
     def preprocess_data(self):
         # Assuming the self.merged_data is a DataFrame
         if self.merged_data is not None:
-            with open(f'.//merged_cloud_data.csv', 'r') as f:
+            with open(f'./Dynamic_resource/merged_cloud_data.csv', 'r') as f:
                 reader = list(csv.reader(f))
                 title = reader[0]
                 data = reader[1:]
+
                 for idx, row in enumerate(data):
                     row[0] = row[0].split(' ')[1][:5]
                     row[1] = row[1].split('.')[0]
@@ -67,10 +68,10 @@ class DataAnalysisAgent:
         self.user_decision_log = './Dynamic_resource/user_decision_log'
 
     def get_chat_response(self, data_summary):
-        user_log_prompt = ""
-        if isinstance(self.user_decision_log):
-            with open(self.user_decision_log, 'r') as f:
-                user_log_prompt = f.read().strip('\n')
+        # user_log_prompt = ""
+        # if isinstance(self.user_decision_log):
+        #     with open(self.user_decision_log, 'r') as f:
+        #         user_log_prompt = f.read().strip('\n')
 
         prompt = '''
             I have organized and preprocessed a cloud operation dataset, which includes metrics :
@@ -84,7 +85,8 @@ class DataAnalysisAgent:
                      <Time> : {YYYY-MM-DD hh:mm:ss ~ hh:mm:ss}
                      <Problems> :
                      <Recommendation> : (scale up or scale down instance's CPU/instance 's memory/Instance_Count)
-        ''' + data_summary + '\n' + user_log_prompt + '\n'
+        ''' + data_summary + '\n' \
+                 # + user_log_prompt + '\n'
 
         response = self.chat.send_message(prompt)
         return response.text
@@ -92,6 +94,7 @@ class DataAnalysisAgent:
 
 def main():
     file_path = "./Dynamic_resource/csv"
+    # file_path = "./ICSD_Cloud_Resource"
     file_paths = [
         f"{file_path}/Request_Latency.csv",
         f"{file_path}/Container_CPU_Utilization.csv",

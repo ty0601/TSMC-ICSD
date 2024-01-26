@@ -5,6 +5,7 @@ from draw_figure import plot_csv_subplot
 
 
 def process_json_to_csv(json_file_path, csv_file_path, data_extractor):
+    processed_times = set()
     with open(json_file_path, 'r') as file:
         json_data = json.load(file)
 
@@ -14,13 +15,19 @@ def process_json_to_csv(json_file_path, csv_file_path, data_extractor):
 
         if isinstance(json_data, list):
             for entry in json_data:
-                row = data_extractor['row_extractor'](entry)
-                writer.writerow(row)
+                formatted_time = format_time(entry['timeInterval']['endTime'])
+                if formatted_time not in processed_times:
+                    processed_times.add(formatted_time)
+                    row = data_extractor['row_extractor'](entry)
+                    writer.writerow(row)
         else:
             for series_data in json_data['timeSeriesData']:
                 for point_data in series_data['pointData']:
-                    row = data_extractor['row_extractor'](point_data)
-                    writer.writerow(row)
+                    formatted_time = format_time(point_data['timeInterval']['endTime'])
+                    if formatted_time not in processed_times:
+                        processed_times.add(formatted_time)
+                        row = data_extractor['row_extractor'](point_data)
+                        writer.writerow(row)
 
 
 def format_time(time_str):
@@ -42,6 +49,8 @@ def instance_count_extractor(json_file_path, csv_file_path, data_extractor):
             instance_state = series_data['labelValues'][5]['stringValue']
             for point_data in series_data['pointData']:
                 time = format_time(point_data['timeInterval']['endTime'])
+                if time is None:
+                    continue
                 instance_count = int(point_data['values'][0].get('int64Value', 0))
 
                 if time not in aggregated_data:
@@ -70,6 +79,8 @@ def request_count_extractor(json_file_path, csv_file_path, data_extractor):
             request_state = series_data['labelValues'][6]['stringValue']
             for point_data in series_data['pointData']:
                 time = format_time(point_data['timeInterval']['endTime'])
+                if time is None:
+                    continue
                 request_count = int(point_data['values'][0].get('int64Value', 0))
 
                 if time not in aggregated_data:
