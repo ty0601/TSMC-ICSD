@@ -18,6 +18,8 @@ prompt = '''
         <Time> : 
         <Problems> : 
         <Recommendation> :
-    ''' + data_summary
-# print(prompt)
-print(get_chat_response(chat, prompt))
+    '''
+for data in data_summary:
+    comment = prompt + data
+    print(get_chat_response(chat, comment))
+    break

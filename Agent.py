@@ -1,10 +1,9 @@
 from vertexai.preview.generative_models import GenerativeModel
 import pandas as pd
-
+import csv
 
 class DataLoadAgent:
     def __init__(self, file_paths):
-        # Initialize with a list of file paths
         self.file_paths = file_paths
         self.merged_data = None
 
@@ -20,25 +19,44 @@ class DataLoadAgent:
         # Merging all dataframes on the 'Time' index
         self.merged_data = pd.concat(dataframes.values(), axis=1)
 
-        # Saving the merged data as a new CSV file
-        self.merged_data.to_csv('merged_cloud_data.csv')
+        # Preprocess the data right after merging
+        self.preprocess_data()
+
+        # Saving the merged and preprocessed data as a new CSV file
+        self.merged_data.to_csv('./Dynamic resource/merged_cloud_data.csv')
 
     def get_merged_data(self):
-        # Return the merged data as CSV string without index
         if self.merged_data is not None:
             return self.merged_data.to_csv(index=False)
         else:
             raise ValueError("Data not loaded. Please run load_and_merge_data() first.")
 
-    def get_merged_data_batches(self, batch_size=10):
-        # Ensure 'Time' column is included in the CSV
+    def preprocess_data(self):
+        # Assuming the self.merged_data is a DataFrame
+        if self.merged_data is not None:
+            with open(f'.//merged_cloud_data.csv', 'r') as f:
+                reader = list(csv.reader(f))
+                title = reader[0]
+                data = reader[1:]
+                for idx, row in enumerate(data):
+                    row[0] = row[0].split(' ')[1][:5]
+                    row[1] = row[1].split('.')[0]
+                    row[2] = row[2].split('.')[0]
+                    row[3] = row[3].split('.')[0]
+                    data[idx] = [row[i] for i in list(range(0, 4)) + list(range(5, 7)) + [8]]
+                title = [title[i] for i in list(range(0, 4)) + list(range(5, 7)) + [8]]
+                return [title] + data
+        else:
+            raise ValueError("Data not loaded. Please run load_and_merge_data() first.")
+
+    def get_merged_data_batches(self, batch_size=30):
         if self.merged_data is not None:
             # Resetting index to make 'Time' a column
             data_with_time = self.merged_data.reset_index()
-            return [data_with_time.iloc[i:i + batch_size].to_csv(index=False) for i in
-                    range(0, len(data_with_time), batch_size)]
+            return [data_with_time.iloc[i:i + batch_size].to_csv(index=False) for i in range(0, len(data_with_time), batch_size)]
         else:
             raise ValueError("Data not loaded. Please run load_and_merge_data() first.")
+
 
 
 class DataAnalysisAgent:
@@ -63,7 +81,6 @@ class DataAnalysisAgent:
 
         response = self.chat.send_message(prompt)
         return response.text
-
 
 class SuspendAnalysisAgent:
     def __init__(self, model_name):
@@ -108,6 +125,7 @@ class FinalAnalysisAgent:
         response = self.chat.send_message(prompt)
         return response.text
 
+
 # class DataAnalysisAgent:
 #     def __init__(self, model_name):
 #         self.model = GenerativeModel(model_name)
@@ -123,18 +141,20 @@ class FinalAnalysisAgent:
 
 
 def main():
+    file_path = "./Dynamic resource/csv"
     file_paths = [
-        "./ICSD Cloud Resource/Request Latency.csv",
-        "./ICSD Cloud Resource/Container CPU Utilization.csv",
-        "./ICSD Cloud Resource/Container Memory Utilization.csv",
-        "./ICSD Cloud Resource/Container Startup Latency.csv",
-        "./ICSD Cloud Resource/Instance Count.csv",
-        "./ICSD Cloud Resource/Request Count.csv"
+        f"{file_path}/Request Latency.csv",
+        f"{file_path}/Container CPU Utilization.csv",
+        f"{file_path}/Container Memory Utilization.csv",
+        f"{file_path}/Container Startup Latency.csv",
+        f"{file_path}/Instance Count.csv",
+        f"{file_path}/Request Count.csv"
     ]
 
     data_agent = DataLoadAgent(file_paths)
     data_agent.load_and_merge_data()
     merged_data_batches = data_agent.get_merged_data_batches()
+    print(merged_data_batches)
 
     analysis_agent = DataAnalysisAgent("gemini-pro")
     suspend_agent = SuspendAnalysisAgent("gemini-pro")
@@ -143,17 +163,15 @@ def main():
     for i, batch_csv in enumerate(merged_data_batches):
         analyzed_data = analysis_agent.get_chat_response(batch_csv)
         print(analyzed_data)
-        print('------------------------------------------------------------------------------------------------------')
-        opinion = suspend_agent.get_chat_response(batch_csv, analyzed_data)
-        print(opinion)
-        print('------------------------------------------------------------------------------------------------------')
-        final_analyzed_data = final_agent.get_chat_response(batch_csv, analyzed_data, opinion)
-        print(final_analyzed_data)
-        print()
+        # print('------------------------------------------------------------------------------------------------------')
+        # opinion = suspend_agent.get_chat_response(batch_csv, analyzed_data)
+        # print(opinion)
+        # print('------------------------------------------------------------------------------------------------------')
+        # final_analyzed_data = final_agent.get_chat_response(batch_csv, analyzed_data, opinion)
+        # print(final_analyzed_data)
+        # print()
 
         break
-    # analyzed_data = analysis_agent.get_chat_response(data_agent.get_merged_data())
-    # print(analyzed_data)
 
 
 if __name__ == '__main__':

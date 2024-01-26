@@ -3,48 +3,36 @@ import requests
 import json
 from datetime import datetime, timedelta
 
-metrics = [
-    "run.googleapis.com/container/cpu/utilizations",
-    "run.googleapis.com/container/memory/utilizations",
-    "run.googleapis.com/container/startup_latencies",
-    "run.googleapis.com/container/instance_count",
-    "run.googleapis.com/request_count",
-    "run.googleapis.com/request_latencies",
-]
 
-url = 'https://monitoring.googleapis.com/v3/projects/586786925939/timeSeries:query'
-token = "ya29.a0AfB_byBpKX6-xOX8uHKBTSHpgjh25HdYAuL433JHjRVm5JI9gllId6ufe8b0UtiCMA0sUXvnHsVTZ3J_Kp-kz3i3Mrors0rKe-IwhPA-LPQrOVnSqFnzH9GN8AZihLQPamCrDSJeFIrMnHiP43IY0AFm_E1-eK3WczLZN2Y0IVZm91jHgvemOxK04zYyzToOKNGUdbAAceVC8T0880fPvsFrUOgRBRcR1nBQYO-RX6hVvnZYVspcf36e5x5I2kq5wZQc2KcYf8F0N1l-qbTFOqAapUl-8F276wVLFl8K3T4XrkUDrUsJYMtT9KShSJbYoFnxPEAciTezYpM9anOqRSDD34YpxVEZ-vQ9vTv5fl6bPZ3XnnqE2se906bCzrDgkNa4ZEXumG2YMNoJ6CJfqQDt77KqbilhaCgYKAaoSARASFQHGX2MisbA-Nj7TUM_9Az9gJ1SqHw0423"
+def fetch_metrics_data(metrics, url, token, server_name, file_name):
+    time = "within 1d"
+    json_data = [
+        f'''
+        {{
+            "query": "fetch cloud_run_revision | metric '{metric}' | {time} | filter resource.project_id == '586786925939' && (resource.location == 'us-central1' && resource.service_name == '{server_name}')"
+        }}
+        ''' for metric in metrics
+    ]
 
-time = "within 3d"
-server_name = "simpleserver"
+    headers = {
+        'Content-Type': 'application/json',
+        'Authorization': f'Bearer {token}'
+    }
 
-json_data = [f'''
-{{
-    "query": "fetch cloud_run_revision | metric '{metric}' | {time} | filter resource.project_id == '586786925939' && (resource.location == 'us-central1' && resource.service_name == '{server_name}')"
-}}
-''' for metric in metrics]
-
-headers = {
-    'Content-Type': 'application/json',
-    'Authorization': f'Bearer {token}'
-}
-
-file_name = {
-    'cpu_utilizations': 'Container CPU Utilization',
-    'memory_utilizations': 'Container Memory Utilization',
-    'instance_count': 'Instance Count',
-    'startup_latencies': 'Container Startup Latency',
-    'request_latencies': 'Request Latency',
-    'request_count': 'Request Count'
-}
+    for jd, name in zip(json_data, metrics):
+        response = requests.post(url, data=jd, headers=headers)
+        filename = name.split("/")[-1]
+        if filename == "utilizations":
+            filename = name.split("/")[-2] + "_" + filename
+        with open(f"./Dynamic resource/json/{file_name[filename]}.json", "w") as file:
+            file.write(response.text)
 
 
 def fetch_logs(project_id, token, filename, page_size=100):
     end_time = datetime.utcnow()
-    start_time = end_time - timedelta(days=3)  # 過去 3 天
+    start_time = end_time - timedelta(days=1)  # 過去 3 天
     time_filter = f"timestamp >= \"{start_time.isoformat()}Z\" AND timestamp <= \"{end_time.isoformat()}Z\""
 
-    # 定義過濾條件
     filter_condition = (
         'resource.type="cloud_run_revision" '
         'resource.labels.revision_name="simpleserver-00001-kgv" '
@@ -56,7 +44,6 @@ def fetch_logs(project_id, token, filename, page_size=100):
         'severity>=WARNING'
     )
 
-    # 將時間篩選條件加入到 filter_condition 中
     full_filter = f"{filter_condition} AND {time_filter}"
 
     url = "https://logging.googleapis.com/v2/entries:list"
@@ -88,15 +75,35 @@ def fetch_logs(project_id, token, filename, page_size=100):
         json.dump(all_logs, file)
 
 
-for jd, name in zip(json_data, metrics):
-    response = requests.post(url, data=jd, headers=headers)
-    filename = name.split("/")[-1]
-    if filename == "utilizations":
-        filename = name.split("/")[-2] + "_" + filename
-    with open(f"./Dynamic resource/json/{file_name[filename]}.json", "w") as file:
-        file.write(response.text)
+def main():
+    metrics = [
+        "run.googleapis.com/container/cpu/utilizations",
+        "run.googleapis.com/container/memory/utilizations",
+        "run.googleapis.com/container/startup_latencies",
+        "run.googleapis.com/container/instance_count",
+        "run.googleapis.com/request_count",
+        "run.googleapis.com/request_latencies",
+    ]
 
-project_id = "tsmccareerhack2024-icsd-grp4"
-filename = "cloud_run_logs"
+    url = 'https://monitoring.googleapis.com/v3/projects/586786925939/timeSeries:query'
+    token = "ya29.a0AfB_byDQRv8cjjHUksFNI1Q68-dOii2MekCB_JFIP8nBfdrWMcptiCHJtvBOoOj1EwljYWFOEHrO85fSGdYYQTCVNrs2VnVnJoe1pynITUkomUs7l4VPssJpv6w_Wnwnd0ogp-Jg8McogRWt_OE0P_Dj_pE7ZISqBaVZHqygs_uivzycBym_0m-T3mqSnwkt5FVobkiYTbDwsmCIxc_OudwUXOiKdbUNHwegO0vzxmxSsvwBjs3hNlJzx9T9kEE1AI3C5Va5t8ss7mxLSfOyLVarU39OrbhY2d0ByUs5VyeIahwrxjQ-kvEXRRA_1P7SEmuK5zT9c_tVhx_Gr271CTuL4fAcVcRYduxYcV8QfBXyX5cfTG6h44pcRvUWQvmzpokxcJDhSVAnrYO79Mx2k9MMSK13aCgYKAaQSARASFQHGX2Mi93JsYDrMDpQBp2ALxRv4yA0419"  # Replace with your actual token
+    server_name = "simpleserver"
 
-fetch_logs(project_id, token, filename)
+    file_name = {
+        'cpu_utilizations': 'Container CPU Utilization',
+        'memory_utilizations': 'Container Memory Utilization',
+        'instance_count': 'Instance Count',
+        'startup_latencies': 'Container Startup Latency',
+        'request_latencies': 'Request Latency',
+        'request_count': 'Request Count'
+    }
+
+    fetch_metrics_data(metrics, url, token, server_name, file_name)
+
+    project_id = "tsmccareerhack2024-icsd-grp4"
+    filename = "cloud_run_logs"
+    fetch_logs(project_id, token, filename)
+
+
+if __name__ == "__main__":
+    main()
