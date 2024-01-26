@@ -2,6 +2,7 @@ from vertexai.preview.generative_models import GenerativeModel
 import pandas as pd
 import csv
 
+
 class DataLoadAgent:
     def __init__(self, file_paths):
         self.file_paths = file_paths
@@ -53,10 +54,10 @@ class DataLoadAgent:
         if self.merged_data is not None:
             # Resetting index to make 'Time' a column
             data_with_time = self.merged_data.reset_index()
-            return [data_with_time.iloc[i:i + batch_size].to_csv(index=False) for i in range(0, len(data_with_time), batch_size)]
+            return [data_with_time.iloc[i:i + batch_size].to_csv(index=False) for i in
+                    range(0, len(data_with_time), batch_size)]
         else:
             raise ValueError("Data not loaded. Please run load_and_merge_data() first.")
-
 
 
 class DataAnalysisAgent:
@@ -83,10 +84,11 @@ class DataAnalysisAgent:
                      <Time> : {YYYY-MM-DD hh:mm:ss ~ hh:mm:ss}
                      <Problems> :
                      <Recommendation> : (scale up or scale down instance's CPU/instance 's memory/instance count)
-        ''' + data_summary+'\n'+user_log_prompt+'\n'
+        ''' + data_summary + '\n' + user_log_prompt + '\n'
 
         response = self.chat.send_message(prompt)
         return response.text
+
 
 def main():
     file_path = "./Dynamic resource/csv"
