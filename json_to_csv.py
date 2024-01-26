@@ -5,7 +5,6 @@ from draw_figure import plot_csv_subplot
 
 
 def process_json_to_csv(json_file_path, csv_file_path, data_extractor):
-    processed_times = set()
 
     with open(json_file_path, 'r') as file:
         json_data = json.load(file)
@@ -16,19 +15,13 @@ def process_json_to_csv(json_file_path, csv_file_path, data_extractor):
 
         if isinstance(json_data, list):
             for entry in json_data:
-                formatted_time = format_time(entry['timeInterval']['endTime'])
-                if formatted_time not in processed_times:
-                    processed_times.add(formatted_time)
-                    row = data_extractor['row_extractor'](entry)
-                    writer.writerow(row)
+                row = data_extractor['row_extractor'](entry)
+                writer.writerow(row)
         else:
             for series_data in json_data['timeSeriesData']:
                 for point_data in series_data['pointData']:
-                    formatted_time = format_time(point_data['timeInterval']['endTime'])
-                    if formatted_time not in processed_times:
-                        processed_times.add(formatted_time)
-                        row = data_extractor['row_extractor'](point_data)
-                        writer.writerow(row)
+                    row = data_extractor['row_extractor'](point_data)
+                    writer.writerow(row)
 
 
 def format_time(time_str):
@@ -91,10 +84,9 @@ def main():
         'logs': {
             'headers': ["Timestamp", "Severity", "TextPayload", "LogName"],
             'row_extractor': lambda entry: [
-                entry.get('timestamp', 'N/A'),
+                entry.get('timestamp', 'N/A').split('.')[0],
                 entry.get('severity', 'N/A'),
-                entry.get('textPayload', 'N/A').replace('\n', ' '),
-                entry.get('logName', 'N/A')
+                entry.get('textPayload', 'N/A').replace('\n', ' ').split('.')[0],
             ]
         }
     }

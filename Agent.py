@@ -63,8 +63,14 @@ class DataAnalysisAgent:
     def __init__(self, model_name):
         self.model = GenerativeModel(model_name)
         self.chat = self.model.start_chat()
+        self.user_decision_log = './Dynamic resource/user_decision_log'
 
     def get_chat_response(self, data_summary):
+        user_log_prompt = ""
+        if isinstance(self.user_decision_log):
+            with open(self.user_decision_log, 'r') as f:
+                user_log_prompt = f.read().strip('\n')
+
         prompt = '''
             I have organized and preprocessed a cloud operation dataset, which includes metrics :
             Time(YYYY-MM-DD hh:mm:ss),Request Latency (ms),Container CPU Utilization (%),Container Memory Utilization (%),Container Startup Latency (ms),Instance Count (active),Instance Count (idle),Request Count (1xx),Request Count (2xx),Request Count (3xx),Request Count (4xx)
@@ -77,68 +83,10 @@ class DataAnalysisAgent:
                      <Time> : {YYYY-MM-DD hh:mm:ss ~ hh:mm:ss}
                      <Problems> :
                      <Recommendation> : (scale up or scale down instance's CPU/instance 's memory/instance count)
-        ''' + data_summary
+        ''' + data_summary+'\n'+user_log_prompt+'\n'
 
         response = self.chat.send_message(prompt)
         return response.text
-
-class SuspendAnalysisAgent:
-    def __init__(self, model_name):
-        self.model = GenerativeModel(model_name)
-        self.chat = self.model.start_chat()
-
-    def get_chat_response(self, data_summary, analyzed_data):
-        prompt = '''
-            I have organized and preprocessed a cloud operation dataset, which includes metrics :
-            Time(YYYY-MM-DD hh:mm:ss),Request Latency (ms),Container CPU Utilization (%),Container Memory Utilization (%),Container Startup Latency (ms),Instance Count (active),Instance Count (idle),Request Count (1xx),Request Count (2xx),Request Count (3xx),Request Count (4xx)
-            And this is the analysis that I made, please check if the problem is really a problem and the recommendation is really helpful.
-            Use the following step-by-step instructions to respond:
-                step 1. Read the data and the analyzed data carefully.
-                step 2. Analyze the correlation between data metrics.
-                step 3. Check the analyzed data.
-                step 4. Response your opinion about the analyzed data.
-        ''' + data_summary + analyzed_data
-
-        response = self.chat.send_message(prompt)
-        return response.text
-
-
-class FinalAnalysisAgent:
-    def __init__(self, model_name):
-        self.model = GenerativeModel(model_name)
-        self.chat = self.model.start_chat()
-
-    def get_chat_response(self, data_summary, analyzed_data, opinion):
-        prompt = '''
-            I have organized and preprocessed a cloud operation dataset, which includes metrics :
-            Time(YYYY-MM-DD hh:mm:ss),Request Latency (ms),Container CPU Utilization (%),Container Memory Utilization (%),Container Startup Latency (ms),Instance Count (active),Instance Count (idle),Request Count (1xx),Request Count (2xx),Request Count (3xx),Request Count (4xx)
-            I have made some recommendation about the analyzed data, please redo the report
-            Use the following step-by-step instructions to respond:
-                step 1. Read the data, the analyzed data and opinion carefully.
-                step 2. Analyze the correlation between data metrics.
-                step 3. Response the new analyzed data according to the opinion and follow the template:
-                    <Problem Time> : {YYYY-MM-DD hh:mm:ss ~ hh:mm:ss}
-                    <Problems> :
-                    <Recommendation> : (scale up or scale down instance's CPU/instance 's memory/instance count)
-        ''' + data_summary + analyzed_data + opinion
-
-        response = self.chat.send_message(prompt)
-        return response.text
-
-
-# class DataAnalysisAgent:
-#     def __init__(self, model_name):
-#         self.model = GenerativeModel(model_name)
-#         self.chat = self.model.start_chat()
-#
-#     def get_chat_response(self, data_summary):
-#         prompt = '''
-#             please consider mean, std, min, max and response the threshold of scaling CPU, memory and instance.
-#         ''' + data_summary
-#
-#         response = self.chat.send_message(prompt)
-#         return response.text
-
 
 def main():
     file_path = "./Dynamic resource/csv"
@@ -156,19 +104,10 @@ def main():
     merged_data_batches = data_agent.get_merged_data_batches(batch_size=50)
 
     analysis_agent = DataAnalysisAgent("gemini-pro")
-    suspend_agent = SuspendAnalysisAgent("gemini-pro")
-    final_agent = FinalAnalysisAgent("gemini-pro")
 
     for i, batch_csv in enumerate(merged_data_batches):
         analyzed_data = analysis_agent.get_chat_response(batch_csv)
         print(analyzed_data)
-        # print('------------------------------------------------------------------------------------------------------')
-        # opinion = suspend_agent.get_chat_response(batch_csv, analyzed_data)
-        # print(opinion)
-        # print('------------------------------------------------------------------------------------------------------')
-        # final_analyzed_data = final_agent.get_chat_response(batch_csv, analyzed_data, opinion)
-        # print(final_analyzed_data)
-        # print()
 
         break
 
