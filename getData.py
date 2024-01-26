@@ -32,7 +32,7 @@ def fetch_metrics_data(metrics, url, token, server_name, file_name):
         filename = name.split("/")[-1]
         if filename == "utilizations":
             filename = name.split("/")[-2] + "_" + filename
-        with open(f"./Dynamic resource/json/{file_name[filename]}.json", "w") as file:
+        with open(f"./Dynamic_resource/json/{file_name[filename]}.json", "w") as file:
             file.write(response.text)
 
 
@@ -79,7 +79,7 @@ def fetch_logs(project_id, token, filename, page_size=100):
             print(f"Error fetching logs: {response.text}")
             break
 
-    with open(f"./Dynamic resource/json/{filename}.json", "w") as file:
+    with open(f"./Dynamic_resource/json/{filename}.json", "w") as file:
         json.dump(all_logs, file)
 
 
@@ -95,18 +95,16 @@ def main():
 
     url = 'https://monitoring.googleapis.com/v3/projects/586786925939/timeSeries:query'
     token = get_token()
-    print("token")
-    print(token)
 
     server_name = "simpleserver"
 
     file_name = {
-        'cpu_utilizations': 'Container CPU Utilization',
-        'memory_utilizations': 'Container Memory Utilization',
-        'instance_count': 'Instance Count',
-        'startup_latencies': 'Container Startup Latency',
-        'request_latencies': 'Request Latency',
-        'request_count': 'Request Count'
+        'cpu_utilizations': 'Container_CPU_Utilization',
+        'memory_utilizations': 'Container_Memory_Utilization',
+        'instance_count': 'Instance_Count',
+        'startup_latencies': 'Container_Startup_Latency',
+        'request_latencies': 'Request_Latency',
+        'request_count': 'Request_Count'
     }
 
     fetch_metrics_data(metrics, url, token, server_name, file_name)

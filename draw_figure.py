@@ -7,11 +7,11 @@ import matplotlib.dates as mdates
 import pandas as pd
 
 y_mapping = {
-    'Request Latency': 'Request Latency (ms)',
-    'Container CPU Utilization': 'CPU Utilization (%)',
-    'Container Memory Utilization': 'Memory Utilization (%)',
-    'Instance Count': 'Instance count',
-    'Request Count': 'Request count'
+    'Request_Latency': 'Request Latency (ms)',
+    'Container_CPU_Utilization': 'CPU Utilization (%)',
+    'Container_Memory_Utilization': 'Memory Utilization (%)',
+    'Instance_Count': 'Instance count',
+    'Request_Count': 'Request count'
 }
 
 
@@ -50,14 +50,14 @@ def plot_csv_subplot(file_paths, output_path):
     plt.close()
 
 
-# path = './ICSD Cloud Resource/'
-# path = './Dynamic resource/csv/'
+# path = './ICSD_Cloud_Resource/'
+# path = './Dynamic_resource/csv/'
 # file_paths = [
-#     f"{path}Request Latency.csv",
-#     f"{path}Container CPU Utilization.csv",
-#     f"{path}Container Memory Utilization.csv",
-#     f"{path}Instance Count.csv",
-#     f"{path}Request Count.csv"
+#     f"{path}Request_Latency.csv",
+#     f"{path}Container_CPU_Utilization.csv",
+#     f"{path}Container_Memory_Utilization.csv",
+#     f"{path}Instance_Count.csv",
+#     f"{path}Request_Count.csv"
 # ]
 #
 # output_path = f"./{path.split('/')[1]}/figure/subplot.png"

@@ -11,7 +11,7 @@ class DataLoadAgent:
     def load_and_merge_data(self):
         # Reading the files into dataframes
         dataframes = {path.split('/')[-1].split('.')[0]: pd.read_csv(path) for path in self.file_paths}
-
+        print(dataframes)
         # Standardizing the time format and setting it as index for each dataframe
         for df in dataframes.values():
             df['Time'] = pd.to_datetime(df['Time'])
@@ -24,7 +24,7 @@ class DataLoadAgent:
         self.preprocess_data()
 
         # Saving the merged and preprocessed data as a new CSV file
-        self.merged_data.to_csv('./Dynamic resource/merged_cloud_data.csv')
+        self.merged_data.to_csv('./Dynamic_resource/merged_cloud_data.csv')
 
     def get_merged_data(self):
         if self.merged_data is not None:
@@ -64,7 +64,7 @@ class DataAnalysisAgent:
     def __init__(self, model_name):
         self.model = GenerativeModel(model_name)
         self.chat = self.model.start_chat()
-        self.user_decision_log = './Dynamic resource/user_decision_log'
+        self.user_decision_log = './Dynamic_resource/user_decision_log'
 
     def get_chat_response(self, data_summary):
         user_log_prompt = ""
@@ -74,7 +74,7 @@ class DataAnalysisAgent:
 
         prompt = '''
             I have organized and preprocessed a cloud operation dataset, which includes metrics :
-            Time(YYYY-MM-DD hh:mm:ss),Request Latency (ms),Container CPU Utilization (%),Container Memory Utilization (%),Container Startup Latency (ms),Instance Count (active),Instance Count (idle),Request Count (1xx),Request Count (2xx),Request Count (3xx),Request Count (4xx)
+            Time(YYYY-MM-DD hh:mm:ss),Request_Latency (ms),Container_CPU_Utilization (%),Container_Memory_Utilization (%),Container_Startup_Latency (ms),Instance_Count (active),Instance_Count (idle),Request_Count (1xx),Request_Count (2xx),Request_Count (3xx),Request_Count (4xx)
             The title of each column, columns are separated by comma.
             Use the following step-by-step instructions to respond:
                 step 1. Read the data carefully
@@ -83,7 +83,7 @@ class DataAnalysisAgent:
                 step 3. Based on this data and correlation between the data metrics, please response each anomalies in the provided data and follow the template:
                      <Time> : {YYYY-MM-DD hh:mm:ss ~ hh:mm:ss}
                      <Problems> :
-                     <Recommendation> : (scale up or scale down instance's CPU/instance 's memory/instance count)
+                     <Recommendation> : (scale up or scale down instance's CPU/instance 's memory/Instance_Count)
         ''' + data_summary + '\n' + user_log_prompt + '\n'
 
         response = self.chat.send_message(prompt)
@@ -91,14 +91,14 @@ class DataAnalysisAgent:
 
 
 def main():
-    file_path = "./Dynamic resource/csv"
+    file_path = "./Dynamic_resource/csv"
     file_paths = [
-        f"{file_path}/Request Latency.csv",
-        f"{file_path}/Container CPU Utilization.csv",
-        f"{file_path}/Container Memory Utilization.csv",
-        f"{file_path}/Container Startup Latency.csv",
-        f"{file_path}/Instance Count.csv",
-        f"{file_path}/Request Count.csv"
+        f"{file_path}/Request_Latency.csv",
+        f"{file_path}/Container_CPU_Utilization.csv",
+        f"{file_path}/Container_Memory_Utilization.csv",
+        f"{file_path}/Container_Startup_Latency.csv",
+        f"{file_path}/Instance_Count.csv",
+        f"{file_path}/Request_Count.csv"
     ]
 
     data_agent = DataLoadAgent(file_paths)

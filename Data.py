@@ -3,12 +3,12 @@ import pandas as pd
 def get_data():
     # Load the provided CSV files
     file_paths = [
-        "./ICSD Cloud Resource/Request Latency.csv",
-        "./ICSD Cloud Resource/Container CPU Utilization.csv",
-        "./ICSD Cloud Resource/Container Memory Utilization.csv",
-        "./ICSD Cloud Resource/Container Startup Latency.csv",
-        "./ICSD Cloud Resource/Instance Count.csv",
-        "./ICSD Cloud Resource/Request Count.csv"
+        "./ICSD_Cloud_Resource/Request_Latency.csv",
+        "./ICSD_Cloud_Resource/Container_CPU_Utilization.csv",
+        "./ICSD_Cloud_Resource/Container_Memory_Utilization.csv",
+        "./ICSD_Cloud_Resource/Container_Startup_Latency.csv",
+        "./ICSD_Cloud_Resource/Instance_Count.csv",
+        "./ICSD_Cloud_Resource/Request_Count.csv"
     ]
 
     # Reading the files into dataframes
