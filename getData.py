@@ -4,6 +4,14 @@ import json
 from datetime import datetime, timedelta
 
 
+def get_token():
+    os.system("gcloud auth application-default print-access-token > token.txt")
+    with open("token.txt", "r") as file:
+        token = file.read().strip()
+    os.remove("token.txt")
+    return token
+
+
 def fetch_metrics_data(metrics, url, token, server_name, file_name):
     time = "within 1d"
     json_data = [
@@ -30,7 +38,7 @@ def fetch_metrics_data(metrics, url, token, server_name, file_name):
 
 def fetch_logs(project_id, token, filename, page_size=100):
     end_time = datetime.utcnow()
-    start_time = end_time - timedelta(days=1)  # 過去 3 天
+    start_time = end_time - timedelta(days=1)
     time_filter = f"timestamp >= \"{start_time.isoformat()}Z\" AND timestamp <= \"{end_time.isoformat()}Z\""
 
     filter_condition = (
@@ -86,7 +94,10 @@ def main():
     ]
 
     url = 'https://monitoring.googleapis.com/v3/projects/586786925939/timeSeries:query'
-    token = "ya29.a0AfB_byDQRv8cjjHUksFNI1Q68-dOii2MekCB_JFIP8nBfdrWMcptiCHJtvBOoOj1EwljYWFOEHrO85fSGdYYQTCVNrs2VnVnJoe1pynITUkomUs7l4VPssJpv6w_Wnwnd0ogp-Jg8McogRWt_OE0P_Dj_pE7ZISqBaVZHqygs_uivzycBym_0m-T3mqSnwkt5FVobkiYTbDwsmCIxc_OudwUXOiKdbUNHwegO0vzxmxSsvwBjs3hNlJzx9T9kEE1AI3C5Va5t8ss7mxLSfOyLVarU39OrbhY2d0ByUs5VyeIahwrxjQ-kvEXRRA_1P7SEmuK5zT9c_tVhx_Gr271CTuL4fAcVcRYduxYcV8QfBXyX5cfTG6h44pcRvUWQvmzpokxcJDhSVAnrYO79Mx2k9MMSK13aCgYKAaQSARASFQHGX2Mi93JsYDrMDpQBp2ALxRv4yA0419"  # Replace with your actual token
+    token = get_token()
+    print("token")
+    print(token)
+
     server_name = "simpleserver"
 
     file_name = {

@@ -1,7 +1,7 @@
 import json
 import csv
 import datetime
-from draw_figure import plot_csv
+from draw_figure import plot_csv_subplot
 
 
 def process_json_to_csv(json_file_path, csv_file_path, data_extractor):
@@ -123,15 +123,17 @@ def main():
         process_json_to_csv(json_path, csv_path, extractor)
 
     path = './Dynamic resource/csv'
+    # path = './ICSD Cloud Resource'
     file_paths = [
         f"{path}/Request Latency.csv",
         f"{path}/Container CPU Utilization.csv",
         f"{path}/Container Memory Utilization.csv",
         f"{path}/Instance Count.csv",
+        f"{path}/Request Count.csv"
     ]
 
-    for path in file_paths:
-        plot_csv(path)
+    output_path = f"{path.split('/')[1]}/figure/subplot.png"
+    plot_csv_subplot(file_paths, output_path)
 
 
 if __name__ == '__main__':
